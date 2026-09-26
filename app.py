@@ -10,7 +10,7 @@ if not os.path.exists("balance.json"):
     json.dump({"balance": 0.0, "trades": []}, open("balance.json","w"))
 data = json.load(open("balance.json"))
 st.metric("Balance", f"${data['balance']:.2f}")
-st.line_chart(pd.DataFrame({"Gold": [2650][2652][2648][2655][2660][2658]}))
+st.line_chart(pd.DataFrame({"Gold": [2650, 2652, 2648, 2655, 2660, 2658]}))
 
 st.divider()
 st.subheader("💰 REAL MONEY - DERIV")
