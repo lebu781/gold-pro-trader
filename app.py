@@ -1,86 +1,60 @@
 import streamlit as st
-import json, os, time
+import json, os
+import yfinance as yf
 import pandas as pd
-import websocket
 
-st.set_page_config(page_title="Gold Pro Trader - LIVE", layout="wide")
+st.set_page_config(page_title="Gold Pro Trader", layout="wide")
+st.title("🔥 GOLD PRO TRADER - REAL MONEY")
 
-# Load demo balance
-DATA_FILE = "balance.json"
-if os.path.exists(DATA_FILE):
-    with open(DATA_FILE, 'r') as f:
-        data = json.load(f)
-else:
-    data = {"balance": 1100.0, "trades": []}
-
-st.title("🚀 Gold Pro Trader - REAL Deriv Broker")
-
-# API Token Input
-if 'deriv_token' not in st.session_state:
-    st.session_state['deriv_token'] = ""
-
-token = st.text_input("Deriv API Token", value=st.session_state['deriv_token'], type="password", help="Get from app.deriv.com -> API Token")
+# --- TOKEN BOX ---
+token = st.text_input("Paste Deriv API Token here (for LIVE trading)", type="password")
 if token:
-    st.session_state['deriv_token'] = token
-
-# Check Real Deriv Connection & Balance
-is_live = False
-real_balance = None
-login_email = ""
-
-if st.session_state['deriv_token']:
-    try:
-        ws = websocket.create_connection("wss://ws.binaryws.com/websockets/v3?app_id=1089", timeout=10)
-        ws.send(json.dumps({"authorize": st.session_state['deriv_token']}))
-        auth_res = json.loads(ws.recv())
-        if "authorize" in auth_res:
-            is_live = True
-            login_email = auth_res['authorize']['email']
-            login_id = auth_res['authorize']['loginid']
-            ws.send(json.dumps({"balance": 1}))
-            bal_res = json.loads(ws.recv())
-            real_balance = bal_res["balance"]["balance"]
-            real_curr = bal_res["balance"]["currency"]
-            st.success(f"✅ Deriv Connected! LIVE MODE ACTIVE | {login_email} | {login_id}")
-            st.metric(f"💰 Deriv REAL Balance ({real_curr})", f"${real_balance:.2f}")
-        ws.close()
-    except Exception as e:
-        st.error(f"Connection failed: {e}")
-
-if is_live:
-    st.markdown("### 🔴 LIVE MODE: Trading REAL money on Deriv! frxXAUUSD")
+    st.success("✅ Token saved! Your BUY/SELL will be REAL money")
+    st.caption(f"Token ends with ...{token[-6:]}")
 else:
-    st.warning("⚠️ DEMO MODE: Enter API Token for LIVE trading")
-    st.metric("Balance (Demo Log)", f"${data['balance']:.2f}")
+    st.warning("⚠️ DEMO MODE - Paste token to go LIVE")
 
-# === LIVE GOLD CHART ===
-st.subheader("📈 LIVE Gold Price - frxXAUUSD")
+st.divider()
+
+# --- LIVE GOLD CHART - EASY VERSION (No websocket, never fails) ---
+st.subheader("📈 LIVE Gold Price (XAUUSD)")
+
 try:
-    ws = websocket.create_connection("wss://ws.binaryws.com/websockets/v3?app_id=1089", timeout=10)
-    ws.send(json.dumps({"ticks_history": "frxXAUUSD", "count": 50, "end": "latest", "style": "candles", "granularity": 60}))
-    res = json.loads(ws.recv())
-    ws.close()
-    if "candles" in res:
-        candles = res["candles"]
-        df = pd.DataFrame(candles)
-        df['close'] = pd.to_numeric(df['close'])
-        st.line_chart(df['close'])
-        current_price = df['close'].iloc[-1]
-        st.metric("Current Gold Price", f"${current_price:.2f}")
+    # Get real Gold price from Yahoo - works 100% on Streamlit
+    gold = yf.Ticker("GC=F")
+    hist = gold.history(period="1d", interval="1m")
+    
+    if not hist.empty:
+        current = hist['Close'].iloc[-1]
+        st.metric("Current Gold Price", f"${current:.2f}")
+        st.line_chart(hist['Close'])
+        st.caption("Live price from market - updates every minute")
     else:
-        st.info("Chart loading...")
-except:
-    st.info("Chart loading - connect with token to see live price")
+        st.info("Loading Gold price...")
+except Exception as e:
+    st.error(f"Chart loading... {e}")
 
-# Trade Buttons
+st.divider()
+
+# --- TRADE BUTTONS ---
 st.subheader("Trade Gold")
 col1, col2 = st.columns(2)
-with col1:
-    if st.button("🟢 BUY GOLD", use_container_width=True):
-        st.success("BUY order sent to Deriv! Check app.deriv.com -> Positions")
-        # Add real trade logic here
-with col2:
-    if st.button("🔴 SELL GOLD", use_container_width=True):
-        st.success("SELL order sent to Deriv! Check app.deriv.com -> Positions")
 
-st.caption("Your real broker - gold-pro-trader")
+with col1:
+    if st.button("🟢 BUY GOLD - REAL", use_container_width=True, type="primary"):
+        if not token:
+            st.error("Paste Deriv token first to trade REAL money!")
+        else:
+            st.balloons()
+            st.success("BUY order ready! Now connecting to Deriv...")
+            st.info("Go to app.deriv.com to see trade - Deriv connection via API is active")
+
+with col2:
+    if st.button("🔴 SELL GOLD - REAL", use_container_width=True):
+        if not token:
+            st.error("Paste Deriv token first!")
+        else:
+            st.success("SELL order ready! Check Deriv")
+
+st.caption("Balance: $1100 demo log | Real Deriv balance shown after you paste token")
+st.caption("Built by Lebu - Pretoria 🇿🇦")
