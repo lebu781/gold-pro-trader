@@ -33,7 +33,7 @@ st.divider()
 st.subheader("📈 LIVE GOLD - frxXAUUSD (Same as your MT5 Gold)")
 try:
     gold = yf.Ticker("GC=F")
-    hist = gold.history(period="1d", interval="1m")
+    hist = gold.history(period="5d", interval="15m")
     if not hist.empty:
         current = hist['Close'].iloc[-1]
         st.metric("Gold Price Now", f"${current:.2f}")
