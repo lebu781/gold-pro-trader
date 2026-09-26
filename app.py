@@ -9,7 +9,26 @@ st.title("🔥 GOLD PRO TRADER - REAL MONEY")
 if not os.path.exists("balance.json"):
     json.dump({"balance": 0.0, "trades": []}, open("balance.json","w"))
 data = json.load(open("balance.json"))
-st.metric("Balance", f"${data['balance']:.2f}")
+# Show Deriv REAL balance if connected
+if 'deriv_token' in st.session_state and st.session_state['deriv_token']:
+    try:
+        import websocket, json
+        ws = websocket.create_connection("wss://ws.binaryws.com/websockets/v3?app_id=1089", timeout=10)
+        ws.send(json.dumps({"authorize": st.session_state['deriv_token']}))
+        auth_res = json.loads(ws.recv())
+        if "authorize" in auth_res:
+            ws.send(json.dumps({"balance": 1}))
+            bal_res = json.loads(ws.recv())
+            real_bal = bal_res["balance"]["balance"]
+            real_curr = bal_res["balance"]["currency"]
+            st.metric(f"💰 Deriv REAL Balance ({real_curr})", f"${real_bal:.2f}")
+            st.caption(f"Login: {auth_res['authorize']['email']} | ID: {auth_res['authorize']['loginid']}")
+        ws.close()
+    except:
+        st.metric("Balance (Demo Log)", f"${data['balance']:.2f}")
+        st.caption("Deriv balance check failed - showing demo balance")
+else:
+    st.metric("Balance (Demo Log)", f"${data['balance']:.2f}")
 st.line_chart(pd.DataFrame({"Gold": [2650, 2652, 2648, 2655, 2660, 2658]}))
 
 st.divider()
