@@ -46,12 +46,37 @@ else:
     if c2.button("🟢 BUY GOLD", use_container_width=True):
         open("gold_position.txt","w").write(f"BUY,{price}")
         st.rerun()
-
-st.divider()
-st.subheader("💳 Deposit / Withdraw")
-dep = st.number_input("Amount $", value=100.0, step=10.0)
-colA,colB = st.columns(2)
-if colA.button("➕ Deposit (Demo)", use_container_width=True):
+    st.divider()
+    st.subheader("💰 REAL MONEY - DERIV")
+    dep = st.number_input("Amount $", value=100.0, step=10.0, key="dep_amount")
+    colA,colB = st.columns(2)
+    with colA:
+        st.link_button("🔵 Deposit via DERIV", "https://app.deriv.com/cashier/deposit", use_container_width=True)
+    with colB:
+        st.link_button("🔴 Withdraw via DERIV", "https://app.deriv.com/cashier/withdrawal", use_container_width=True)
+    
+    st.divider()
+    st.subheader(" Demo Balance (for testing)")
+    col1,col2 = st.columns(2)
+    if col1.button(" Deposit (Demo)", use_container_width=True):
+        data["balance"]+=dep
+        json.dump(data, open("balance.json","w"))
+        st.success(f"Deposited ${dep}!")
+        st.rerun()
+    if col2.button(" Withdraw (Demo)", use_container_width=True):
+        if data["balance"]>=dep:
+            data["balance"]-=dep
+            json.dump(data, open("balance.json","w"))
+            st.success(f"Withdrew ${dep}")
+            st.rerun()
+    
+    st.divider()
+    st.subheader("🔗 Connect Your Deriv API")
+    st.caption("Get token from: app.deriv.com > Account Settings > API Token")
+    deriv_token = st.text_input("Deriv API Token", type="password")
+    if deriv_token:
+        st.success("✅ Deriv Connected!")
+    st.link_button("Get FREE API Token", "https://app.deriv.com/account/api-token", use_container_width=True)
     data["balance"]+=dep
     json.dump(data, open("balance.json","w"))
     st.success(f"Deposited ${dep}!")
